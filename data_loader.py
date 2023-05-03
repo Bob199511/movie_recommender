@@ -1,23 +1,27 @@
 import pandas as pd
 import numpy as np
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pytorch_lightning as pl
 import re
+import time
+
 
 def get_data():
-    ratings = pd.read_csv('./data/ratings.csv',
+    print("Getting data")
+    start_time = time.time()
+    ratings = pd.read_csv('./data/ratings_small.csv',
                           parse_dates=['timestamp'])
-    # sample 1% of users
-    rand_userIds = np.random.choice(ratings['userId'].unique(),
-                            size=int(len(ratings['userId'].unique())*0.1),
-                            replace=False)
+    # sample 10% of users
+    # rand_userIds = np.random.choice(ratings['userId'].unique(),
+    #                         size=int(len(ratings['userId'].unique())*0.1),
+    #                         replace=False)
 
-    ratings = ratings.loc[ratings['userId'].isin(rand_userIds)]
-    print('There are {} rows of data from {} users'.format(len(ratings), len(rand_userIds)))
+    # ratings = ratings.loc[ratings['userId'].isin(rand_userIds)]
+    # print('There are {} rows of data from {} users'.format(len(ratings), len(rand_userIds)))
     ratings['rank_latest'] = ratings.groupby(['userId'])['timestamp'] \
         .rank(method='first', ascending=False)
 
@@ -76,7 +80,7 @@ def get_data():
                                     unknown_index=0)
 
     df['original_language'] = df['original_language'].apply(lambda x: language_encoder.encode(x).numpy())
-    links_table = pd.read_csv('./data/links.csv')
+    links_table = pd.read_csv('./data/links_small.csv')
     links_table = links_table[['movieId', 'tmdbId']]
     df = pd.merge(df, links_table,
                   how='inner',
@@ -106,9 +110,12 @@ def get_data():
     print("df.columns: ", df.columns)
     ratings.to_csv("./output/ratings.csv")
     train_dataset.to_csv("./output/train_dataset.csv")
-    test_dataset.to_csv("./output/test_datset.csv")
+    test_dataset.to_csv("./output/test_dataset.csv")
     df.to_csv("./output/df.csv")
 
+    end_time = time.time()
+    print("Get data finished")
+    print("take time:",end_time-start_time," second.")
 
     return unique_actors, language_encoder, ratings, train_dataset, df
 
@@ -138,7 +145,7 @@ class MovieLensTrainDataset(Dataset):
         user_item_set = set(zip(ratings['userId'], ratings['movieId']))
 
         num_negatives = 4
-        for u, i in tqdm(user_item_set):
+        for u, i in tqdm(user_item_set,desc="Negtive sampling:"):
             for _ in range(num_negatives):
                 negative_item = np.random.choice(all_movieIds)
                 while (u, negative_item) in user_item_set:
@@ -146,7 +153,10 @@ class MovieLensTrainDataset(Dataset):
                 new_samples.append([u, negative_item, 0])
 
         # this df now caontains all negative samples appended to the positive samples
-        ratings = ratings.append(pd.DataFrame(new_samples, columns=ratings.columns))
+        # for old pandas
+        # ratings = ratings.append(pd.DataFrame(new_samples, columns=ratings.columns))
+        # for new pandas
+        ratings = ratings._append(pd.DataFrame(new_samples, columns=ratings.columns))
 
         # combine ratings with movies_metadata
         ratings = pd.merge(ratings, metadata,

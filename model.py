@@ -6,7 +6,9 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import pytorch_lightning as pl
 import re
-from data.data import get_data, MovieLensTrainDataset
+from data_loader import get_data, MovieLensTrainDataset
+import json
+
 
 class NCF(pl.LightningModule):
     """ Neural Collaborative Filtering (NCF)
@@ -23,10 +25,13 @@ class NCF(pl.LightningModule):
             genre = data[7:]
     """
 
-    def __init__(self, num_users, num_items, ratings, metadata, all_movieIds, num_actors, num_languages):
+    def __init__(self, ratings=None, metadata=None, all_movieIds=None):
         super().__init__()
-        self.user_embedding = nn.Embedding(num_embeddings=num_users, embedding_dim=16)
-        self.item_embedding = nn.Embedding(num_embeddings=num_items, embedding_dim=16)
+        with open("./config.json", mode="r") as file:
+            config = json.load(file)
+        
+        self.user_embedding = nn.Embedding(num_embeddings=config['user_emb_size'], embedding_dim=16)
+        self.item_embedding = nn.Embedding(num_embeddings=config['movie_emb_size'], embedding_dim=16)
 
         self.misc_stack = nn.Sequential(
             nn.Linear(23, 32),
@@ -34,7 +39,7 @@ class NCF(pl.LightningModule):
             nn.Dropout(0.1)
         )
 
-        self.cast_embedding = nn.Embedding(num_embeddings=num_actors, embedding_dim=8)
+        self.cast_embedding = nn.Embedding(num_embeddings=config['actor_emb_size'], embedding_dim=8)
 
         self.cast_stack = nn.Sequential(
             nn.Linear(8 * 5, 64),
@@ -45,7 +50,7 @@ class NCF(pl.LightningModule):
             nn.Dropout(0.1)
         )
 
-        self.language_embedding = nn.Embedding(num_embeddings=num_languages, embedding_dim=4)
+        self.language_embedding = nn.Embedding(num_embeddings=config['language_emb_size'], embedding_dim=4)
 
         self.combiner = nn.Sequential(
             nn.Linear(32 * 2 + 4, 32),
@@ -116,4 +121,4 @@ class NCF(pl.LightningModule):
 
     def train_dataloader(self):
         return DataLoader(MovieLensTrainDataset(self.ratings, self.metadata, self.all_movieIds),
-                          batch_size=512, shuffle=True, num_workers=0)
+                          batch_size=512, shuffle=True, num_workers=10)

@@ -1,0 +1,6 @@
+{
+    "user_emb_size":300000,
+    "movie_emb_size":200000,
+    "actor_emb_size":200000,
+    "language_emb_size":100
+}

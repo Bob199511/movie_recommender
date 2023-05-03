@@ -133,3 +133,12 @@ dmypy.json
 
 # vscode folder
 .vscode/
+
+data/
+
+lightning_logs/
+logs/
+
+output/
+
+checkpoint/

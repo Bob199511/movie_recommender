@@ -4,9 +4,9 @@ import torch
 from tqdm.auto import tqdm
 from model import NCF
 
-test_dataset = pd.read_csv('./output/test_datset.csv').drop(labels='Unnamed: 0', axis=1)
+test_dataset = pd.read_csv('./output/test_dataset.csv').drop(labels='Unnamed: 0', axis=1)
 print(test_dataset.columns)
-train_dataset = pd.read_csv('./output/train_datset.csv').drop(labels='Unnamed: 0', axis=1)
+train_dataset = pd.read_csv('./output/train_dataset.csv').drop(labels='Unnamed: 0', axis=1)
 df = pd.read_csv('./output/df.csv').drop(labels='Unnamed: 0', axis=1)
 print(test_dataset.head())
 test_dataset.loc[:, 'rating'] = 1
@@ -15,13 +15,20 @@ test_dataset = test_dataset.drop(['rank_latest', 'rating'], axis=1)
 test_dataset = test_dataset.reset_index(drop=True)
 
 ratings = pd.read_csv('./output/ratings.csv').drop(labels='Unnamed: 0', axis=1)
-num_users = ratings['userId'].max() + 1
-num_items = ratings['movieId'].max() + 1
-num_actors = 176047 + 1 #len(unique_actors) + 1 #
-num_langs = 88 + 1 #len(language_encoder.tokens.keys()) + 1 #
+# num_users = ratings['userId'].max() + 1
+# num_items = ratings['movieId'].max() + 1
+# num_actors = 176047 + 1 #len(unique_actors) + 1 #
+# num_langs = 88 + 1 #len(language_encoder.tokens.keys()) + 1 #
 all_movieIds = ratings['movieId'].unique()
-model = NCF(num_users, num_items, train_dataset, df, all_movieIds, num_actors, num_langs)
-model.load_state_dict(torch.load('./checkpoint/model.pth'))
+# model = NCF(num_users, num_items, train_dataset, df, all_movieIds, num_actors, num_langs)
+# model.load_state_dict(torch.load('./checkpoint/model.pth'))
+model_path = "./checkpoint/model_small.pt"
+model = torch.load(model_path)
+print("Loading from ", model_path)
+
+# torch.save(model.state_dict(), './checkpoint/model_small.pth')
+# model = NCF(train_dataset, df, all_movieIds)
+model.ratings = ratings
 model.eval()
 
 def test_model():
