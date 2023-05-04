@@ -138,9 +138,3 @@ data/
 
 lightning_logs/
 logs/
-
-output/
-
-checkpoint/
-
-index/
