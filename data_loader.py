@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import json
 
 import torch
 import torch.nn as nn
@@ -10,10 +11,14 @@ import re
 import time
 
 
-def get_data():
-    print("Getting data")
+def get_data(small=True):
+    if small:
+        small = "_small"
+    else:
+        small = ""
+    print(f"Getting data {small}")
     start_time = time.time()
-    ratings = pd.read_csv('./data/ratings_small.csv',
+    ratings = pd.read_csv(f'./data/ratings{small}.csv',
                           parse_dates=['timestamp'])
     # sample 10% of users
     # rand_userIds = np.random.choice(ratings['userId'].unique(),
@@ -80,7 +85,7 @@ def get_data():
                                     unknown_index=0)
 
     df['original_language'] = df['original_language'].apply(lambda x: language_encoder.encode(x).numpy())
-    links_table = pd.read_csv('./data/links_small.csv')
+    links_table = pd.read_csv(f'./data/links{small}.csv')
     links_table = links_table[['movieId', 'tmdbId']]
     df = pd.merge(df, links_table,
                   how='inner',
@@ -112,12 +117,34 @@ def get_data():
     train_dataset.to_csv("./output/train_dataset.csv")
     test_dataset.to_csv("./output/test_dataset.csv")
     df.to_csv("./output/df.csv")
-
+    get_metadata()
     end_time = time.time()
     print("Get data finished")
     print("take time:",end_time-start_time," second.")
 
     return unique_actors, language_encoder, ratings, train_dataset, df
+
+
+def get_metadata():
+    df = pd.read_csv("./output/df.csv").drop(labels='Unnamed: 0', axis=1)
+    meta = {}
+    for index,row in df.iterrows():
+        movie_id = str(int(row['movieId']))
+        if movie_id in meta.keys():
+            continue
+        else:
+            meta[movie_id] = []
+        for colomn in ['original_language', 'adult', 'budget',
+                           'revenue', 'Action', 'Adventure', 'Animation', 'Comedy',
+                           'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'Foreign',
+                           'History', 'Horror', 'Music', 'Mystery', 'Romance', 'Science Fiction',
+                           'TV Movie', 'Thriller', 'War', 'Western', 'cast1', 'cast2', 'cast3', 'cast4', 'cast5']:
+            if colomn in ['budget','revenue']:
+                meta[movie_id].append(float(row[colomn]))
+            else:
+                meta[movie_id].append(int(row[colomn]))
+    with open("./output/meta_data.json", mode="w") as file:
+        json.dump(meta,file)
 
 
 class MovieLensTrainDataset(Dataset):
@@ -173,3 +200,7 @@ class MovieLensTrainDataset(Dataset):
 
         #         print("PRINT 4", psutil.virtual_memory().percent)
         return ratings[ratings.columns[:-1]].to_numpy().astype(np.float32), ratings['rating'].to_numpy().astype(int)
+
+
+if __name__=="__main__":
+    get_metadata()

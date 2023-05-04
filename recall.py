@@ -158,7 +158,8 @@ class Recaller(object):
         return list(set(self.topKmovies + user_sim + movie_sim))
 
 
-recaller = Recaller("./checkpoint/model_small.pt", "./index", True, True)
-movies = recaller.get_movies_for_user(220)
-print(movies)
-print(len(movies))
+if __name__=="__main__":
+    recaller = Recaller("./checkpoint/model_small.pt", "./index", True, True)
+    movies = recaller.get_movies_for_user(220)
+    print(movies)
+    print(len(movies))

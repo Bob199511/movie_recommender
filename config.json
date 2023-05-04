@@ -1,4 +1,5 @@
 {
+    "model_path":"./checkpoint/model_small.pt",
     "user_emb_size":300000,
     "movie_emb_size":200000,
     "actor_emb_size":200000,
