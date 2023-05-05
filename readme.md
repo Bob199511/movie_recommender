@@ -3,6 +3,7 @@
 ## 项目结构
 
 data文件夹:存放原始数据集,需要全部放入
+数据地址：https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset
 
 output文件夹:保存数据处理的中间结果
 
